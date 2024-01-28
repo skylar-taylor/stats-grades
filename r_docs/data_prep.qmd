@@ -1,0 +1,131 @@
+---
+title: "Stats Grades Project Data Prep"
+author: "Sky Taylor"
+format: 
+  html:
+    self-contained: true
+    toc: true
+editor: visual
+---
+
+## Filtering
+
+```{r, message=FALSE}
+library(dplyr)
+library(readr)
+library(here)
+library(tidyverse)
+
+data <- here("data/smarvus_extra_grade_data.csv") |> read.csv()
+```
+
+```{r}
+data <- data |> 
+  select(unique_id, university, starts_with("stats_edu_"), grade_module_name, emsa_grade, srm_grade, dasar_grade, inferensial_grade, ist101_grade, ist102_grade, psk202_grade, rs2_grade, rs4_grade, ams_grade, yr1_grade, stats_mcq1_L2, stats_mcq2_L2, yr2_grade)
+
+
+data_filtered <- data |> 
+  filter(if_any(c(stats_edu_grade_1, stats_edu_grade_2, stats_edu_grade_3, stats_edu_grade_4, stats_edu_grade_5, stats_edu_grade_6), ~ !is.na(.)) & if_any(c(emsa_grade, srm_grade, dasar_grade, inferensial_grade, ist101_grade, ist102_grade, psk202_grade, rs2_grade, rs4_grade, ams_grade, yr1_grade, stats_mcq1_L2, stats_mcq2_L2, yr2_grade), ~ !is.na(.)))
+```
+
+```{r}
+write.csv(data_filtered, "filtered_grades.csv")
+```
+
+## Recoded data
+
+```{r}
+data_recoded <- here("data/filtered_grades_coded.csv") |> read.csv()
+
+
+data_recoded <- data_recoded |> 
+  select(unique_id, university, ends_with("recode"), starts_with("stats_edu_grade"), emsa_grade, srm_grade, dasar_grade, inferensial_grade, ist101_grade, ist102_grade, psk202_grade, yr1_grade, yr2_grade)
+```
+
+```{r}
+self_report_data <- data_recoded |> 
+  mutate(
+    emsa_self_report =
+      case_when(
+        stats_edu_module_1_recode == "EMSA" ~ stats_edu_grade_1,
+        stats_edu_module_2_recode  == "EMSA" ~ stats_edu_grade_2,
+        stats_edu_module_3_recode  == "EMSA" ~ stats_edu_grade_3,
+        stats_edu_module_4_recode  == "EMSA" ~ stats_edu_grade_4,
+        stats_edu_module_5_recode  == "EMSA" ~ stats_edu_grade_5,
+        stats_edu_module_6_recode  == "EMSA" ~ stats_edu_grade_6
+    ),
+    srm_self_report =
+      case_when(
+        stats_edu_module_1_recode == "SRM" ~ stats_edu_grade_1,
+        stats_edu_module_2_recode  == "SRM" ~ stats_edu_grade_2,
+        stats_edu_module_3_recode  == "SRM" ~ stats_edu_grade_3,
+        stats_edu_module_4_recode  == "SRM" ~ stats_edu_grade_4,
+        stats_edu_module_5_recode  == "SRM" ~ stats_edu_grade_5,
+        stats_edu_module_6_recode  == "SRM" ~ stats_edu_grade_6
+    ),      
+    dasar_self_report =
+      case_when(
+        stats_edu_module_1_recode == "Basic" ~ stats_edu_grade_1,
+        stats_edu_module_2_recode  == "Basic" ~ stats_edu_grade_2,
+        stats_edu_module_3_recode  == "Basic" ~ stats_edu_grade_3,
+        stats_edu_module_4_recode  == "Basic" ~ stats_edu_grade_4,
+        stats_edu_module_5_recode  == "Basic" ~ stats_edu_grade_5,
+        stats_edu_module_6_recode  == "Basic" ~ stats_edu_grade_6
+    ),
+    inferensial_self_report =
+      case_when(
+        stats_edu_module_1_recode == "Inferential" ~ stats_edu_grade_1,
+        stats_edu_module_2_recode  == "Inferential" ~ stats_edu_grade_2,
+        stats_edu_module_3_recode  == "Inferential" ~ stats_edu_grade_3,
+        stats_edu_module_4_recode  == "Inferential" ~ stats_edu_grade_4,
+        stats_edu_module_5_recode  == "Inferential" ~ stats_edu_grade_5,
+        stats_edu_module_6_recode  == "Inferential" ~ stats_edu_grade_6
+    ),
+    ist101_self_report =
+      case_when(
+        stats_edu_module_1_recode == "IST101" ~ stats_edu_grade_1,
+        stats_edu_module_2_recode  == "IST101" ~ stats_edu_grade_2,
+        stats_edu_module_3_recode  == "IST101" ~ stats_edu_grade_3,
+        stats_edu_module_4_recode  == "IST101" ~ stats_edu_grade_4,
+        stats_edu_module_5_recode  == "IST101" ~ stats_edu_grade_5,
+        stats_edu_module_6_recode  == "IST101" ~ stats_edu_grade_6
+    ),
+    ist102_self_report =
+      case_when(
+        stats_edu_module_1_recode == "IST102" ~ stats_edu_grade_1,
+        stats_edu_module_2_recode  == "IST102" ~ stats_edu_grade_2,
+        stats_edu_module_3_recode  == "IST102" ~ stats_edu_grade_3,
+        stats_edu_module_4_recode  == "IST102" ~ stats_edu_grade_4,
+        stats_edu_module_5_recode  == "IST102" ~ stats_edu_grade_5,
+        stats_edu_module_6_recode  == "IST102" ~ stats_edu_grade_6
+    ),
+    psk202_self_report =
+      case_when(
+        stats_edu_module_1_recode == "PSK202" ~ stats_edu_grade_1,
+        stats_edu_module_2_recode  == "PSK202" ~ stats_edu_grade_2,
+        stats_edu_module_3_recode  == "PSK202" ~ stats_edu_grade_3,
+        stats_edu_module_4_recode  == "PSK202" ~ stats_edu_grade_4,
+        stats_edu_module_5_recode  == "PSK202" ~ stats_edu_grade_5,
+        stats_edu_module_6_recode  == "PSK202" ~ stats_edu_grade_6
+    ),
+    yr1_self_report =
+      case_when(
+        stats_edu_module_1_recode == "Year1" ~ stats_edu_grade_1,
+        stats_edu_module_2_recode  == "Year1" ~ stats_edu_grade_2,
+        stats_edu_module_3_recode  == "Year1" ~ stats_edu_grade_3,
+        stats_edu_module_4_recode  == "Year1" ~ stats_edu_grade_4,
+        stats_edu_module_5_recode  == "Year1" ~ stats_edu_grade_5,
+        stats_edu_module_6_recode  == "Year1" ~ stats_edu_grade_6
+    ),
+    yr2_self_report =
+      case_when(
+        stats_edu_module_1_recode == "Year2" ~ stats_edu_grade_1,
+        stats_edu_module_2_recode  == "Year2" ~ stats_edu_grade_2,
+        stats_edu_module_3_recode  == "Year2" ~ stats_edu_grade_3,
+        stats_edu_module_4_recode  == "Year2" ~ stats_edu_grade_4,
+        stats_edu_module_5_recode  == "Year2" ~ stats_edu_grade_5,
+        stats_edu_module_6_recode  == "Year2" ~ stats_edu_grade_6
+    )
+  )
+
+```
