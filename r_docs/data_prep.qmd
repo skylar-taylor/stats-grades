@@ -195,4 +195,7 @@ complete_data <- smarvus |>
   left_join(data_sussex, by = "unique_id") |> 
   left_join(self_report_data, by = "unique_id") |> 
   left_join(sussex_self_report, by = "unique_id")
+
+#write to csv
+write.csv(complete_data, "smarvus_self_report.csv")
 ```
