@@ -1,0 +1,207 @@
+---
+title: "Stats Grades Project Analysis"
+author: "Sky Taylor"
+format: 
+  html:
+    self-contained: true
+    toc: true
+editor: visual
+---
+
+```{r, message=FALSE}
+#load packages
+library(dplyr)
+library(readr)
+library(here)
+library(tidyverse)
+library(easystats)
+
+#read in data
+complete_data <- read_csv("data/smarvus_self_report.csv")
+```
+
+## Plots
+
+```{r}
+#reshape data for plots
+reshaped_data <- complete_data |> 
+  select(-grade) |> 
+  pivot_longer(cols = starts_with(c("paas", "ad", "ds", "qqm", "emsa", "srm", "ist101", "ist102", "psk202", "yr1", "yr2")), 
+               names_to = c("module", ".value"), 
+               names_sep = "_") |> 
+  filter(!is.na(grade) & !is.na(self))
+```
+
+```{r}
+#plot of each university
+plot <- reshaped_data |> 
+  ggplot(aes(x = grade, y = self, colour = university)) +
+  geom_point(shape = 18, size = 4, alpha = 0.5) +
+  geom_abline(alpha = .6) +
+  labs(x = "Official grade", y = "Self-report grade") +
+  scale_color_manual(values = c("#E50171", "#0093BD", "#D7000D", "#1E428A")) +
+  theme_minimal() 
+  
+
+plot + facet_wrap(vars(university))
+```
+
+```{r}
+#sussex plot per module
+reshaped_data |> 
+  filter(university == "University of Sussex") |> 
+  ggplot(aes(x = grade, y = self, colour = module)) +
+  geom_point(shape = 18, size = 4, alpha = 0.4) +
+  labs(x = "Official grade", y = "Self-report grade") +
+  scale_x_continuous(limits = c(0, 100), breaks = seq(0, 100, 20)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, 20)) +
+  theme_minimal()
+```
+
+```{r}
+#bournemouth plot per module
+reshaped_data |> 
+  filter(university == "Bournemouth University") |> 
+  ggplot(aes(x = grade, y = self, colour = module)) +
+  geom_point(shape = 18, size = 4, alpha = 0.4) +
+  labs(x = "Official grade", y = "Self-report grade") +
+  scale_x_continuous(limits = c(0, 100), breaks = seq(0, 100, 20)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, 20)) +
+  theme_minimal()
+```
+
+```{r}
+#hasan plot per module
+reshaped_data |> 
+  filter(university == "Hasan Kalyoncu University") |> 
+  ggplot(aes(x = grade, y = self, colour = module)) +
+  geom_point(shape = 18, size = 4, alpha = 0.4) +
+  labs(x = "Official grade", y = "Self-report grade") +
+  scale_x_continuous(limits = c(0, 100), breaks = seq(0, 100, 20)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, 20)) +
+  theme_minimal()
+```
+
+```{r}
+#queens plot per module
+reshaped_data |> 
+  filter(university == "Queen's University Belfast") |> 
+  ggplot(aes(x = grade, y = self, colour = module)) +
+  geom_point(shape = 18, size = 4, alpha = 0.4) +
+  labs(x = "Official grade", y = "Self-report grade") +
+  scale_x_continuous(limits = c(0, 100), breaks = seq(0, 100, 20)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, 20)) +
+  theme_minimal()
+```
+
+## Descriptives
+
+```{r}
+#selecting individuals
+unique <- unique(reshaped_data$unique_id)
+descriptives_df <- complete_data |> 
+  filter(unique_id %in% unique)
+
+#summary of universities
+descriptives_df |> 
+  group_by(university) |> 
+  summarise(
+    n = n(),
+    percent = n*100/length(unique)
+  )
+
+#summary of year group
+descriptives_df |> 
+  group_by(degree_year) |> 
+  summarise(
+    n = n(),
+    percent = n*100/length(unique)
+  )
+
+#summary of gender
+descriptives_df |> 
+  group_by(gender) |> 
+  summarise(
+    n = n(),
+    percent = n*100/length(unique)
+  )
+
+#summary of age
+descriptives_df |> 
+  group_by(age) |> 
+  summarise(
+    n = n(),
+    percent = n*100/length(unique)
+  )
+
+#grade data across modules
+reshaped_data |> 
+  group_by(module) |> 
+  summarise(
+    mean = mean(grade),
+    sd = sd(grade),
+    min = min(grade),
+    max = max(grade)
+  )
+```
+
+## Accuracy of self-report grades
+
+```{r}
+#calculate difference between official and self-report grades
+differences <- reshaped_data |> 
+  mutate(
+    difference = grade - self
+  )
+
+#histogram of the difference between official and self-report grades
+differences |>
+  ggplot(aes(x=difference)) +
+  geom_histogram(binwidth = 2, colour = "#0077b6", fill = "#90e0ef") +
+  labs(x = "Difference between official and self-reported grades", y = "Count") +
+  theme_minimal()
+
+#inspect distribution of how far out reports were by removing those who reported the exact grade
+differences |>
+  filter(difference != 0) |> 
+  ggplot(aes(x=difference)) +
+  geom_histogram(binwidth = 2, colour = "#79021c", fill = "#b6042a") +
+  labs(x = "Difference between official and self-reported grades", y = "Count") +
+  theme_minimal()
+```
+
+```{r}
+#table of the accuracy of self-reported grades
+diff_0 <- differences |> 
+  filter(abs(difference) == 0) |> 
+  nrow()
+
+diff_1 <- differences |> 
+  filter(abs(difference) <= 1) |> 
+  nrow() - diff_0
+
+diff_5 <- differences |> 
+  filter(abs(difference) <= 5) |> 
+  nrow() - (diff_0 + diff_1)
+
+diff_10 <- differences |> 
+  filter(abs(difference) <= 10) |> 
+  nrow() - (diff_0 + diff_1 + diff_5)
+
+diff_more <- differences |> 
+  filter(abs(difference) > 10) |> 
+  nrow()
+
+under <- differences |> 
+  filter(difference < 0) |> 
+  nrow()
+
+over <- differences |> 
+  filter(difference > 0) |> 
+  nrow()
+
+data.frame(
+  Difference = c("Exact marks", "Within 1 mark", "Within 5 marks", "Within 10 marks", "More than 10 marks", "Under estimated", "Over estimated"),
+  n = c(diff_0, diff_1, diff_5, diff_10, diff_more, under, over)) |> 
+  mutate(percentage = n/6.48)
+```
