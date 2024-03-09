@@ -196,6 +196,11 @@ complete_data <- smarvus |>
   left_join(self_report_data, by = "unique_id") |> 
   left_join(sussex_self_report, by = "unique_id")
 
+#make grades numeric
+for (col in names(complete_data |> select(-(1:(ncol(complete_data) - 26))))) {
+  complete_data[[col]] <- as.numeric(complete_data[[col]])
+}
+
 #write to csv
 write.csv(complete_data, "smarvus_self_report.csv")
 ```
