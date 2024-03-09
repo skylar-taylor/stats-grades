@@ -137,3 +137,62 @@ self_report_data <- data_recoded |>
 self_report_data <- self_report_data |> 
   select(unique_id, ends_with("grade"), ends_with("report"))
 ```
+
+## Sussex data
+
+```{r}
+#read in data
+data_sussex <- here("data/sussex_extra_grade_data.csv") |> read.csv()
+
+#filter out non-participants
+data_sussex <- data_sussex |> 
+  filter(!is.na(unique_id))
+
+#conver to numbers
+data_sussex <- data_sussex |> 
+mutate(
+  across(2:7, ~ as.numeric(parse_number(.x)))
+)
+
+#combine modules across different years
+data_sussex <- data_sussex |> 
+  mutate( 
+    paas_grade = case_when(
+      !is.na(pass_2019) & is.na(paas_2020) ~ pass_2019,
+      is.na(pass_2019) & !is.na(paas_2020) ~ paas_2020,
+      !is.na(pass_2019) & !is.na(paas_2020) ~ NA
+    ),
+    ds_grade = case_when(
+      !is.na(ds_2019) & is.na(ds_2020) ~ ds_2019,
+      is.na(ds_2019) & !is.na(ds_2020) ~ ds_2020,
+      !is.na(ds_2019) & !is.na(ds_2020) ~ NA
+    ),
+    qqm_grade = qqm_2019,
+    ad_grade = and_2019) |> 
+      select(unique_id, paas_grade, ad_grade, ds_grade, qqm_grade) 
+```
+
+```{r}
+#read in smarvus
+smarvus <- here("data/smarvus_complete_250124_st.csv") |> read.csv()
+
+#select sussex self-reported grades
+sussex_self_report <- smarvus |> 
+  filter(university == "University of Sussex") |> 
+    mutate(
+        paas_self_report = as.numeric(stats_edu_grade_1_edited),
+        ad_self_report = as.numeric(stats_edu_grade_2_edited),
+        ds_self_report = as.numeric(stats_edu_grade_3_edited),
+        qqm_self_report = as.numeric(stats_edu_grade_4_edited)) |> 
+  select(unique_id, paas_self_report, ad_self_report, ds_self_report, qqm_self_report)
+```
+
+## Final dataset
+
+```{r}
+#join data to smarvus
+complete_data <- smarvus |> 
+  left_join(data_sussex, by = "unique_id") |> 
+  left_join(self_report_data, by = "unique_id") |> 
+  left_join(sussex_self_report, by = "unique_id")
+```
