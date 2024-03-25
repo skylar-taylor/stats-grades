@@ -15,9 +15,10 @@ library(readr)
 library(here)
 library(tidyverse)
 library(easystats)
+library(negligible)
 
 #read in data
-complete_data <- read_csv("data/smarvus_self_report.csv")
+complete_data <- here("data/smarvus_self_report.csv") |> read.csv()
 ```
 
 ## Plots
@@ -25,6 +26,7 @@ complete_data <- read_csv("data/smarvus_self_report.csv")
 ```{r}
 #reshape data for plots
 reshaped_data <- complete_data |> 
+  mutate(official_grades = as.numeric(grade)) |> 
   select(-grade) |> 
   pivot_longer(cols = starts_with(c("paas", "ad", "ds", "qqm", "emsa", "srm", "ist101", "ist102", "psk202", "yr1", "yr2")), 
                names_to = c("module", ".value"), 
@@ -204,4 +206,85 @@ data.frame(
   Difference = c("Exact marks", "Within 1 mark", "Within 5 marks", "Within 10 marks", "More than 10 marks", "Under estimated", "Over estimated"),
   n = c(diff_0, diff_1, diff_5, diff_10, diff_more, under, over)) |> 
   mutate(percentage = n/6.48)
+```
+
+## Equivalence testing
+
+```{r}
+##data prep
+#reverse coded items
+equivalence_data <- reshaped_data |> 
+  mutate(Q16.1_2 = 6-Q16.1_2,
+         Q16.1_3 = 6-Q16.1_3,
+         Q16.1_4 = 6-Q16.1_4,
+         Q16.1_5 = 6-Q16.1_5,
+         Q16.1_7 = 6-Q16.1_7)
+  
+#statistics anxiety
+equivalence_data <- equivalence_data |> 
+  mutate(statistics_anxiety = rowMeans(select(equivalence_data, Q7.1_1:Q7.1_23), na.rm = TRUE))
+
+#self-efficacy
+equivalence_data <- equivalence_data |> 
+  mutate(self_efficacy = rowMeans(select(equivalence_data, Q15.1_1:Q15.1_8), na.rm = TRUE))
+
+#persistence
+equivalence_data <- equivalence_data |> 
+  mutate(persistence = rowMeans(select(equivalence_data, Q16.1_1:Q16.1_7), na.rm = TRUE))
+
+```
+
+```{r}
+#statistics anxiety
+neg.twocors(
+  data = equivalence_data,
+  r1v1 = grade,
+  r1v2 = statistics_anxiety,
+  r2v1 = self,
+  r2v2 = statistics_anxiety,
+  eiu = .1,
+  eil = -.1,
+  bootstrap = FALSE,
+  dep = TRUE
+)
+
+#persistence
+neg.twocors(
+  data = equivalence_data,
+  r1v1 = grade,
+  r1v2 = persistence,
+  r2v1 = self,
+  r2v2 = persistence,
+  eiu = .1,
+  eil = -.1,
+  bootstrap = FALSE,
+  dep = TRUE
+)
+
+#self-efficacy
+neg.twocors(
+  data = equivalence_data,
+  r1v1 = grade,
+  r1v2 = self_efficacy,
+  r2v1 = self,
+  r2v2 = self_efficacy,
+  eiu = .1,
+  eil = -.1,
+  bootstrap = FALSE,
+  dep = TRUE
+)
+
+
+#self-efficacy
+neg.twocors(
+  data = equivalence_data,
+  r1v1 = grade,
+  r1v2 = official_grades,
+  r2v1 = self,
+  r2v2 = official_grades,
+  eiu = .1,
+  eil = -.1,
+  bootstrap = FALSE,
+  dep = TRUE
+)
 ```
