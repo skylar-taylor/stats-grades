@@ -288,3 +288,20 @@ neg.twocors(
   dep = TRUE
 )
 ```
+
+## Exploratory analysis of associations with accuracy
+
+```{r}
+#create composites
+differences <- differences |> 
+  mutate(neg_eval = rowMeans(select(differences, Q11.1_1:Q11.1_8), na.rm = TRUE),
+         trait = rowMeans(select(differences, Q9.1_1:Q9.1_21), na.rm = TRUE))
+
+#fear of negative evaluation (BFNE scale)
+neg_eval_lm <- lm(difference ~ neg_eval, data = differences)
+summary(neg_eval_lm)
+
+#adding trait anxiety (STICSA-Trait)
+trait_lm <- lm(difference ~ neg_eval + trait, data = differences)
+summary(trait_lm)
+```
