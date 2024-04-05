@@ -153,14 +153,14 @@ reshaped_data |>
 #calculate difference between official and self-report grades
 differences <- reshaped_data |> 
   mutate(
-    difference = grade - self
+    difference = self - grade
   )
 
 #histogram of the difference between official and self-report grades
 differences |>
   ggplot(aes(x=difference)) +
   geom_histogram(binwidth = 2, colour = "#0077b6", fill = "#90e0ef") +
-  labs(x = "Difference between official and self-reported grades", y = "Count") +
+  labs(x = "Difference between self-reported and official grades", y = "Count") +
   theme_minimal()
 
 #inspect distribution of how far out reports were by removing those who reported the exact grade
@@ -168,7 +168,7 @@ differences |>
   filter(difference != 0) |> 
   ggplot(aes(x=difference)) +
   geom_histogram(binwidth = 2, colour = "#79021c", fill = "#b6042a") +
-  labs(x = "Difference between official and self-reported grades", y = "Count") +
+  labs(x = "Difference between self-reported and official grades", y = "Count") +
   theme_minimal()
 ```
 
