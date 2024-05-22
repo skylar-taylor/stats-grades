@@ -16,6 +16,7 @@ library(here)
 library(tidyverse)
 library(easystats)
 library(negligible)
+library(kableExtra)
 
 #read in data
 complete_data <- here("data/smarvus_self_report.csv") |> read.csv()
@@ -40,7 +41,7 @@ plot <- reshaped_data |>
   ggplot(aes(x = grade, y = self, colour = university)) +
   geom_point(shape = 18, size = 4, alpha = 0.5) +
   geom_abline(alpha = .6) +
-  labs(x = "Official grade", y = "Self-report grade") +
+  labs(x = "Official grade", y = "Self-report grade", colour = "University") +
   scale_color_manual(values = c("#E50171", "#0093BD", "#D7000D", "#1E428A")) +
   theme_minimal() 
   
@@ -144,7 +145,11 @@ reshaped_data |>
     sd = sd(grade),
     min = min(grade),
     max = max(grade)
-  )
+  ) |> 
+  kable(digits = 2)
+
+#correlation between self-report and actual grades
+cor.test(reshaped_data$self, reshaped_data$grade, method = "pearson")
 ```
 
 ## Accuracy of self-report grades
@@ -205,7 +210,8 @@ over <- differences |>
 data.frame(
   Difference = c("Exact marks", "Within 1 mark", "Within 5 marks", "Within 10 marks", "More than 10 marks", "Under estimated", "Over estimated"),
   n = c(diff_0, diff_1, diff_5, diff_10, diff_more, under, over)) |> 
-  mutate(percentage = n/6.48)
+  mutate(percentage = n/6.48) |> 
+  kable(digits = 2)
 ```
 
 ## Equivalence testing
@@ -232,6 +238,22 @@ equivalence_data <- equivalence_data |>
 equivalence_data <- equivalence_data |> 
   mutate(persistence = rowMeans(select(equivalence_data, Q16.1_1:Q16.1_7), na.rm = TRUE))
 
+
+#reliability
+# create dataframes containing raw scores for each original factor
+stats_anx <- select(equivalence_data, c(Q7.1_1:Q7.1_23))
+self_eff <- select(equivalence_data, c(Q15.1_1:Q15.1_8))
+pers <- select(equivalence_data, c(Q16.1_1:Q16.1_7))
+neg_eval <- select(equivalence_data, c(Q11.1_1:Q11.1_8))
+trait <- select(equivalence_data, c(Q9.1_1:Q9.1_21))
+
+# calculate the point estimate and confidence interval for omega reliability coefficient
+
+MBESS::ci.reliability(stats_anx, type = "omega", conf.level = 0.95, interval.type = "mlr")
+MBESS::ci.reliability(self_eff, type = "omega", conf.level = 0.95, interval.type = "mlr")
+MBESS::ci.reliability(pers, type = "omega", conf.level = 0.95, interval.type = "mlr")
+MBESS::ci.reliability(neg_eval, type = "omega", conf.level = 0.95, interval.type = "mlr")
+MBESS::ci.reliability(trait, type = "omega", conf.level = 0.95, interval.type = "mlr")
 ```
 
 ```{r}
@@ -275,7 +297,7 @@ neg.twocors(
 )
 
 
-#self-efficacy
+#end of module grades
 neg.twocors(
   data = equivalence_data,
   r1v1 = grade,
@@ -300,8 +322,10 @@ differences <- differences |>
 #fear of negative evaluation (BFNE scale)
 neg_eval_lm <- lm(difference ~ neg_eval, data = differences)
 summary(neg_eval_lm)
+model_parameters(neg_eval_lm)
 
-#adding trait anxiety (STICSA-Trait)
-trait_lm <- lm(difference ~ neg_eval + trait, data = differences)
+#trait anxiety (STICSA-Trait)
+trait_lm <- lm(difference ~ trait, data = differences)
 summary(trait_lm)
+model_parameters(trait_lm)
 ```
